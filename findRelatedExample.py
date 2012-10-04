@@ -11,47 +11,35 @@ import evernote.edam.notestore.NoteStore as NoteStore
 import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
 
-def getNonEmptyNotebook(noteStore, authToken):
+def getSingleNote(authToken, noteStore):
 	"""
-	Iterate over user's account until it finds a notebook with at least one note in it.
-	If found, returns that notebook. Returns None otherwise.
+	Retrieve the newest note from the user's account
 	"""
-	notebooks = noteStore.listNotebooks(authToken)
-	c = len(notebooks)
-	print "Found %d %s" % (c, ("notebook" if c == 1 else "notebooks"))
-
-	for notebook in notebooks:
-		filter = NoteStore.NoteFilter()
-		filter.notebookGuid = notebook.guid
-		counts = noteStore.findNoteCounts(authToken, filter, False)
-		ncount = counts.notebookCounts[notebook.guid]
-		if ncount:
-			print "Found notes in %s" % notebook.name
-			return notebook
-	return None 
-
-def getSingleNoteFromNotebook(notebook, authToken):
-	"""
-	Get a single note from notebook and return it. Return None if no note is found.
-	"""
-	filter = NoteStore.NoteFilter()
-	filter.notebookGuid = notebook.guid
-	notes = noteStore.findNotes(authToken, filter, 0, 10)
+	noteFilter = NoteStore.NoteFilter()
+	noteFilter.ascending = True
+	notes = noteStore.findNotes(authToken, noteFilter, 0, 1)
 	if notes.totalNotes:
 		return notes.notes.pop()
 	return None
 
-def getRelatedNotes(note, authToken, noteStore):
+def getRelatedNotes(parameter, authToken, noteStore):
 	"""
 	Get related notes from Evernote Cloud API based on supplied note.
 	"""
 	query = NoteStore.RelatedQuery()
-	query.noteGuid = note.guid
+	if hasattr(parameter,'guid'):
+		# this is a Note 
+		print "you passed a Note object"
+		query.noteGuid = parameter.guid
+	else:
+		# this is probably plain text
+		query.plainText = parameter
+
 	resultSpec = NoteStore.RelatedResultSpec()
 	resultSpec.maxNotes = 3
 	try:
 		related = noteStore.findRelated(authToken, query, resultSpec)
-		return related
+		return (related if related.notes else None)
 	except Exception, e:
 		print "Exception:", e
 		return None
@@ -66,6 +54,23 @@ def getAuthToken():
 	print "Dev token can't be empty."
 	return getAuthToken()
 
+def getPlainText():
+	"""
+	Ask the user for some text to use as a seed for a related note search
+	"""
+	plaintext = raw_input("Type something and we'll find notes related to it:")	
+	if plaintext:
+		return plaintext
+	print "You need to type something."
+	return getPlainText()
+
+def displayRelatedNotes(related):
+	if related:
+		print "Found the following related notes:"
+		for note in related.notes:
+			print note.title
+	else:
+		print "No related notes found."
 
 authToken = "" # bypass the dev token prompt by populating this variable.
 
@@ -85,25 +90,34 @@ noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
 noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
 noteStore = NoteStore.Client(noteStoreProtocol)
 
-notebook = getNonEmptyNotebook(noteStore, authToken)
+# notebook = getNonEmptyNotebook(noteStore, authToken)
 
-if not notebook:
-	print "Couldn't find a non-empty notebook. Add some notes."
-	raise SystemExit
+# if not notebook:
+# 	print "Couldn't find a non-empty notebook. Add some notes."
+# 	raise SystemExit
 
-note = getSingleNoteFromNotebook(notebook, authToken)
+print "Grabbing a note from your account..."
+
+note = getSingleNote(authToken, noteStore)
 
 if not note:
 	print "Something went wrong; no note was found. Alert the authorities!"
 	raise SystemExit
 
+print "Found note:", note.title
+
+print "Now looking for related notes..."
+
 related = getRelatedNotes(note, authToken, noteStore)
 
-if related:
-	print "Found these related notes:"
-	for rnote in related.notes:
-		print note.title
-else:
-	print "No related notes found."
+displayRelatedNotes(related)
+
+print "Now, let's try searching for notes related to random text."
+
+text = getPlainText()
+
+trelated = getRelatedNotes(text, authToken, noteStore)
+
+displayRelatedNotes(trelated)
 
 print "Thanks for playing!"
