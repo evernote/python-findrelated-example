@@ -17,23 +17,23 @@ def getSingleNote(authToken, noteStore):
 	"""
 	noteFilter = NoteStore.NoteFilter()
 	noteFilter.ascending = True
-	notes = noteStore.findNotes(authToken, noteFilter, 0, 1)
-	if notes.totalNotes:
-		return notes.notes.pop()
-	return None
+	try:
+		notes = noteStore.findNotes(authToken, noteFilter, 0, 1)
+		if notes.totalNotes:
+			return notes.notes.pop()
+	except Exception, e:
+		print "Oops! Exception: ", e
+		return None
 
 def getRelatedNotes(parameter, authToken, noteStore):
 	"""
-	Get related notes from Evernote Cloud API based on supplied note.
+	Get related notes from Evernote Cloud API based on supplied note or plain text.
 	"""
 	query = NoteStore.RelatedQuery()
 	if hasattr(parameter,'guid'):
-		# this is a Note 
-		print "you passed a Note object"
-		query.noteGuid = parameter.guid
+		query.noteGuid = parameter.guid # this is a Note
 	else:
-		# this is probably plain text
-		query.plainText = parameter
+		query.plainText = parameter # this is probably plain text
 
 	resultSpec = NoteStore.RelatedResultSpec()
 	resultSpec.maxNotes = 3
@@ -43,26 +43,16 @@ def getRelatedNotes(parameter, authToken, noteStore):
 	except Exception, e:
 		print "Exception:", e
 		return None
-		
-def getAuthToken():
-	"""
-	Get dev token from user.
-	"""
-	token = raw_input("Enter your dev token: ")
-	if token:
-		return token
-	print "Dev token can't be empty."
-	return getAuthToken()
 
-def getPlainText():
+def getNonEmptyUserInput(prompt):
 	"""
-	Ask the user for some text to use as a seed for a related note search
+	Prompt the user for input, disallowing empty responses
 	"""
-	plaintext = raw_input("Type something and we'll find notes related to it:")	
-	if plaintext:
-		return plaintext
-	print "You need to type something."
-	return getPlainText()
+	uinput = raw_input(prompt)
+	if uinput:
+		return uinput
+	print "This can't be empty. Try again."
+	return getNonEmptyUserInput(prompt)
 
 def displayRelatedNotes(related):
 	if related:
@@ -72,10 +62,14 @@ def displayRelatedNotes(related):
 	else:
 		print "No related notes found."
 
+####
+# Get auth token, connect to NoteStore and UserStore
+####
+
 authToken = "" # bypass the dev token prompt by populating this variable.
 
 if not authToken:
-	authToken = getAuthToken()
+	authToken = getNonEmptyUserInput("Enter your dev token: ")
 
 evernoteHost = "sandbox.evernote.com"
 userStoreUri = "https://" + evernoteHost + "/edam/user"
@@ -90,34 +84,28 @@ noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
 noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
 noteStore = NoteStore.Client(noteStoreProtocol)
 
-# notebook = getNonEmptyNotebook(noteStore, authToken)
+####
+# The Main Event
+####
 
-# if not notebook:
-# 	print "Couldn't find a non-empty notebook. Add some notes."
-# 	raise SystemExit
+# Get the most recent note from the user's account
 
 print "Grabbing a note from your account..."
-
 note = getSingleNote(authToken, noteStore)
-
 if not note:
 	print "Something went wrong; no note was found. Alert the authorities!"
 	raise SystemExit
-
 print "Found note:", note.title
-
 print "Now looking for related notes..."
 
+# Look for related notes based on the retrieved note and display them
 related = getRelatedNotes(note, authToken, noteStore)
-
 displayRelatedNotes(related)
 
+# Ask for some text and use that to search for related notes
 print "Now, let's try searching for notes related to random text."
-
-text = getPlainText()
-
+text = getNonEmptyUserInput("Type something and we'll find notes related to it:")
 trelated = getRelatedNotes(text, authToken, noteStore)
-
 displayRelatedNotes(trelated)
 
 print "Thanks for playing!"
