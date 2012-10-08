@@ -84,7 +84,12 @@ userStoreHttpClient = THttpClient.THttpClient(userStoreUri)
 userStoreProtocol = TBinaryProtocol.TBinaryProtocol(userStoreHttpClient)
 userStore = UserStore.Client(userStoreProtocol)
 
-noteStoreUrl = userStore.getNoteStoreUrl(authToken)
+try:
+	noteStoreUrl = userStore.getNoteStoreUrl(authToken)
+except Errors.EDAMUserException, ue:
+	print "Error: your dev token is probably wrong; double-check it."
+	print ue
+	raise SystemExit
 
 noteStoreHttpClient = THttpClient.THttpClient(noteStoreUrl)
 noteStoreProtocol = TBinaryProtocol.TBinaryProtocol(noteStoreHttpClient)
