@@ -11,6 +11,9 @@ import evernote.edam.notestore.NoteStore as NoteStore
 import evernote.edam.type.ttypes as Types
 import evernote.edam.error.ttypes as Errors
 
+REL_NOTE_COUNT = 3
+SEED_NOTE_COUNT = 1
+
 def getSingleNote(authToken, noteStore):
 	"""
 	Retrieve the newest note from the user's account
@@ -18,7 +21,7 @@ def getSingleNote(authToken, noteStore):
 	noteFilter = NoteStore.NoteFilter()
 	noteFilter.ascending = True
 	try:
-		notes = noteStore.findNotes(authToken, noteFilter, 0, 1)
+		notes = noteStore.findNotes(authToken, noteFilter, 0, SEED_NOTE_COUNT)
 		if notes.totalNotes:
 			return notes.notes.pop()
 	except Exception, e:
@@ -29,6 +32,9 @@ def getRelatedNotes(parameter, authToken, noteStore):
 	"""
 	Get related notes from Evernote Cloud API based on supplied note or plain text.
 	"""
+	if not parameter:
+		raise Exception("Paramter cannot be empty.")
+
 	query = NoteStore.RelatedQuery()
 	if hasattr(parameter,'guid'):
 		query.noteGuid = parameter.guid # this is a Note
@@ -36,7 +42,7 @@ def getRelatedNotes(parameter, authToken, noteStore):
 		query.plainText = parameter # this is probably plain text
 
 	resultSpec = NoteStore.RelatedResultSpec()
-	resultSpec.maxNotes = 3
+	resultSpec.maxNotes = REL_NOTE_COUNT # 3, currently
 	try:
 		related = noteStore.findRelated(authToken, query, resultSpec)
 		return (related if related.notes else None)
