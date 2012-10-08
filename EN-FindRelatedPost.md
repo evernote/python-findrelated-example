@@ -56,9 +56,9 @@ In our example, we only define `maxNotes`. This means that our `RelatedResult` (
 
 ### Potential Uses
 
-This API can be useful in a variety of contexts. At Evernote, `findRelated` is used in many of our Web clippers to show the user notes from their account that are potentially to the web page they're viewing. If you're building an app specializing in meeting notes, `findRelated` could be useful in quickly showing meeting notes with similar content to the current document.
+This API can be useful in a variety of contexts. At Evernote, `findRelated` is used in many of our Web clippers to show the user notes from their account that are potentially to the web page they're viewing. 
 
-
+If you're building an app specializing in meeting notes, `findRelated` could be useful in quickly showing meeting notes with similar content to the current document. Use cases like this are suited quite nicely to `findRelated` and, in many cases, it can increase the utility of your application with relatively little effort.
 
 ### Conclusion
 
