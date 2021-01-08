@@ -66,5 +66,5 @@ It's smooth sailing from here. Assuming nothing blew up, you'll have a `RelatedR
 
 The function definition for `findRelated` can be found in [our API reference documentation](http://dev.evernote.com/documentation/reference/NoteStore.html#Fn_NoteStore_findRelated).
 
-For more information about our API or to learn how to develop software that works with Evernote, visit our [developer site](http://dev.evernote.com) or say hello to [@evernote_dev](https://twitter.com/evernote_dev) on Twitter.
+For more information about our API or to learn how to develop software that works with Evernote, visit our [developer site](http://dev.evernote.com).
 
